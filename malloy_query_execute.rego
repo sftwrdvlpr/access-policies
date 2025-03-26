@@ -2,23 +2,18 @@ package malloy_query_execute
 
 import rego.v1
 
+user_exists(user) if {
+	user in object.keys(data.malloy)
+}
+
+missing_sources(user, input_sources) if {
+	some source in input_sources
+	not source in object.get(data.malloy, user, null).sources
+}
+
 default allow := false
 
-user_exists {
-    data[input.user]
-}
-
-all_sources_exist {
-    not missing_sources
-}
-
-missing_sources[s] {
-    some i
-    s := input.sources[i]
-    not s == data[input.user].sources[_]
-}
-
 allow if {
-    user_exist
-    all_sources_exist
+	user_exists(input.user)
+	not missing_sources(input.user, input.sources)
 }

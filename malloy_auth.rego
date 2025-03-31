@@ -1,4 +1,4 @@
-package malloy.auth
+package malloy_auth
 
 import rego.v1
 

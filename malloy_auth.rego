@@ -2,20 +2,33 @@ package malloy_auth
 
 import rego.v1
 
-source_exists(source_path) if {
-	source_path in object.keys(data.malloy)
+package_exists(package_name) if {
+	package_name in object.keys(data.malloy)
 }
 
-user_exists(user, source_path) if {
-	user in object.get(data.malloy, [source_path, "users"], [])
+user_exists(user, package_name) if {
+	user in object.get(data.malloy, [package_name, "users"], [])
 }
 
-default allow := true
+query_name_exists(package_name, query_name) if {
+	query_name in object.get(data.malloy, [package_name, "queries"], [])
+}
 
-#allow if {
-#    print("input: ", input)
-#
-#	source_path := regex.find_n(`\w*\.malloy`, input.endpoint, 1)[0]
-#	source_exists(source_path)
-#	user_exists(input.user, source_path)
-#}
+default allow := false
+
+claims := payload if {
+	[_, payload, _] := io.jwt.decode(jwt_token)
+}
+
+jwt_token := t if {
+	v := input.attributes.request.http.headers.authorization
+	startswith(v, "Bearer ")
+	t := split(v, " ")[1]
+}
+
+allow if {
+	package_name := [p | p := input.parsed_path[_]; regex.match(`^.*\.malloy$`, p)][0]
+	package_exists(package_name)
+    query_name_exists(package_name, input.parsed_query.queryName[0])
+	user_exists(claims.sub, package_name)
+}

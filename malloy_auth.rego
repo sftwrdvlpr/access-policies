@@ -54,6 +54,14 @@ default allow := false
 allow if {
 	not query_name(input.parsed_query)
 	not source_name(input.parsed_path)
+    not package_name(input.parsed_path)
+    extracted_claims := claims(jwt_token(input.attributes.request.http.headers.authorization))
+    "run-malloy-query" in extracted_claims.aud
+}
+
+allow if {
+	not query_name(input.parsed_query)
+	not source_name(input.parsed_path)
     extracted_claims := claims(jwt_token(input.attributes.request.http.headers.authorization))
 	pn := package_name(input.parsed_path)
     user_permitted_package_level(extracted_claims.sub, pn)
